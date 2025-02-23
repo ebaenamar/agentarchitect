@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowDownTrayIcon, ShareIcon, DocumentDuplicateIcon } from '@heroicons/react/24/outline';
 
 interface ExportOptionsProps {
@@ -11,6 +11,11 @@ interface ExportOptionsProps {
 
 export default function ExportOptions({ diagram, tools }: ExportOptionsProps) {
   const [showCopied, setShowCopied] = useState(false);
+  const [canShare, setCanShare] = useState(false);
+
+  useEffect(() => {
+    setCanShare(typeof navigator !== 'undefined' && !!navigator.share);
+  }, []);
 
   const handleDownloadSVG = async () => {
     const svgElement = document.querySelector('.mermaid svg');
@@ -41,16 +46,14 @@ export default function ExportOptions({ diagram, tools }: ExportOptionsProps) {
   };
 
   const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'AI System Architecture',
-          text: 'Check out this AI system architecture',
-          url: window.location.href,
-        });
-      } catch (err) {
-        console.error('Error sharing:', err);
-      }
+    try {
+      await navigator.share({
+        title: 'AI System Architecture',
+        text: 'Check out this AI system architecture',
+        url: window.location.href,
+      });
+    } catch (err) {
+      console.error('Error sharing:', err);
     }
   };
 
@@ -72,7 +75,7 @@ export default function ExportOptions({ diagram, tools }: ExportOptionsProps) {
         {showCopied ? 'Copied!' : 'Copy JSON'}
       </button>
 
-      {navigator.share && (
+      {canShare && (
         <button
           onClick={handleShare}
           className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
