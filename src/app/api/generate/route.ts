@@ -6,6 +6,10 @@ interface Requirements {
   needsML: boolean;
   needsNLP: boolean;
   needsStreaming: boolean;
+  needsSecurity: boolean;
+  needsMonitoring: boolean;
+  needsScaling: boolean;
+  needsDataProcessing: boolean;
 }
 
 interface ToolSuggestion {
@@ -40,20 +44,39 @@ function analyzePrompt(prompt: string): Requirements {
     needsML: lowerPrompt.includes('ml') || lowerPrompt.includes('machine learning'),
     needsNLP: lowerPrompt.includes('nlp') || lowerPrompt.includes('language'),
     needsStreaming: lowerPrompt.includes('stream') || lowerPrompt.includes('real-time'),
+    needsSecurity: lowerPrompt.includes('security') || lowerPrompt.includes('auth'),
+    needsMonitoring: lowerPrompt.includes('monitor') || lowerPrompt.includes('observability'),
+    needsScaling: lowerPrompt.includes('scale') || lowerPrompt.includes('distributed'),
+    needsDataProcessing: lowerPrompt.includes('data') || lowerPrompt.includes('processing'),
   };
 }
 
 function generateDiagram(requirements: Requirements): string {
   let diagram = `
 graph TB
-    User((User)) --> |Input| Agent
+    User((User)) --> |Input| API[API Gateway]
+    API --> Agent[Agent Core]
 
-    subgraph "Agent Core"
-        Agent[Agent]
-        ActionExecutor[Action Executor]
-        Agent --> ActionExecutor
+    subgraph "Agent System"
+        Agent --> Orchestrator[Orchestrator]
+        Orchestrator --> ActionExecutor[Action Executor]
+        Orchestrator --> Planning[Planning Engine]
+        Planning --> Reflection[Reflection Module]
     end
   `;
+
+  if (requirements.needsSecurity) {
+    diagram += `
+    subgraph "Security Layer"
+        Auth[Authentication]
+        AuthZ[Authorization]
+        Audit[Audit Log]
+        Auth --> AuthZ
+        AuthZ --> Audit
+    end
+    API --> Auth
+    `;
+  }
 
   if (requirements.needsMemory) {
     diagram += `
@@ -61,8 +84,10 @@ graph TB
         MemoryManager[Memory Manager]
         STM[Short-Term Memory]
         LTM[Long-Term Memory]
+        VectorStore[Vector Store]
         MemoryManager --> STM
         MemoryManager --> LTM
+        MemoryManager --> VectorStore
     end
     Agent <--> MemoryManager
     `;
@@ -73,9 +98,39 @@ graph TB
     subgraph "ML Pipeline"
         MLProcessor[ML Processor]
         ModelRegistry[Model Registry]
+        Training[Training Pipeline]
         MLProcessor --> ModelRegistry
+        ModelRegistry --> Training
     end
     Agent <--> MLProcessor
+    `;
+  }
+
+  if (requirements.needsDataProcessing) {
+    diagram += `
+    subgraph "Data Processing"
+        DataIngestion[Data Ingestion]
+        ETL[ETL Pipeline]
+        DataStore[Data Lake]
+        DataIngestion --> ETL
+        ETL --> DataStore
+    end
+    Agent <--> DataIngestion
+    `;
+  }
+
+  if (requirements.needsMonitoring) {
+    diagram += `
+    subgraph "Observability"
+        Metrics[Metrics Collector]
+        Traces[Distributed Tracing]
+        Logs[Log Aggregator]
+        Dashboard[Monitoring Dashboard]
+        Metrics --> Dashboard
+        Traces --> Dashboard
+        Logs --> Dashboard
+    end
+    Agent -.-> Metrics
     `;
   }
 
@@ -93,10 +148,23 @@ function generateToolSuggestions(requirements: Requirements): ToolSuggestion[] {
       suggestions: [
         'LangChain for agent orchestration',
         'OpenAI GPT-4 for decision making',
-        'FastAPI for API endpoints'
+        'FastAPI for API endpoints',
+        'Celery for task queue management'
       ]
     }
   ];
+
+  if (requirements.needsSecurity) {
+    tools.push({
+      component: 'Security Layer',
+      suggestions: [
+        'Auth0 for authentication',
+        'OPA (Open Policy Agent) for authorization',
+        'AWS CloudTrail for audit logging',
+        'Vault for secrets management'
+      ]
+    });
+  }
 
   if (requirements.needsMemory) {
     tools.push({
@@ -104,7 +172,8 @@ function generateToolSuggestions(requirements: Requirements): ToolSuggestion[] {
       suggestions: [
         'Redis for short-term memory',
         'PostgreSQL for long-term storage',
-        'Vector embeddings with Pinecone'
+        'Pinecone for vector embeddings',
+        'Milvus for vector similarity search'
       ]
     });
   }
@@ -115,7 +184,32 @@ function generateToolSuggestions(requirements: Requirements): ToolSuggestion[] {
       suggestions: [
         'PyTorch or TensorFlow for ML models',
         'MLflow for model registry',
+        'Kubeflow for ML pipelines',
         'Ray for distributed training'
+      ]
+    });
+  }
+
+  if (requirements.needsDataProcessing) {
+    tools.push({
+      component: 'Data Processing',
+      suggestions: [
+        'Apache Kafka for data streaming',
+        'Apache Spark for ETL',
+        'Delta Lake for data lake',
+        'dbt for data transformation'
+      ]
+    });
+  }
+
+  if (requirements.needsMonitoring) {
+    tools.push({
+      component: 'Observability',
+      suggestions: [
+        'Prometheus for metrics',
+        'Jaeger for distributed tracing',
+        'ELK Stack for log aggregation',
+        'Grafana for dashboards'
       ]
     });
   }
