@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
+// Configure longer timeout for the API route
+export const maxDuration = 300; // 5 minutes
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -90,9 +95,21 @@ The Mermaid diagram should show:
     });
   } catch (error) {
     console.error('Error:', error);
+    let errorMessage = 'Failed to generate architecture';
+    let statusCode = 500;
+
+    if (error instanceof Error) {
+      if (error.message.includes('timeout')) {
+        errorMessage = 'Request timed out. Please try again.';
+        statusCode = 504;
+      } else {
+        errorMessage = error.message;
+      }
+    }
+
     return NextResponse.json(
-      { error: 'Failed to generate architecture' },
-      { status: 500 }
+      { error: errorMessage },
+      { status: statusCode }
     );
   }
 }

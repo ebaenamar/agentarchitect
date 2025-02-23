@@ -23,13 +23,20 @@ export default function Home() {
     setError(null);
 
     try {
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt }),
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 290000); // 4m50s timeout
+
+      try {
+        const response = await fetch('/api/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ prompt }),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error('Failed to generate architecture');
@@ -38,7 +45,15 @@ export default function Home() {
       const data = await response.json();
       setArchitecture(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      if (err instanceof Error) {
+        if (err.name === 'AbortError') {
+          setError('Request timed out. The system is taking longer than expected to generate your architecture. Please try again.');
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError('An unexpected error occurred. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -49,7 +64,7 @@ export default function Home() {
       <main className="max-w-6xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            AI System Architect
+            AI Agent System Architect
           </h1>
           <p className="text-xl text-gray-600">
             Describe your AI agent requirements and get a customized system architecture
