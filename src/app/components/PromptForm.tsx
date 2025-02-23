@@ -17,7 +17,7 @@ export default function PromptForm({ onSubmit }: { onSubmit: (prompt: string) =>
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          className="w-full h-32 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full h-32 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
           placeholder="Example: I need an AI agent that can process customer support tickets, analyze sentiment, and automatically route them to appropriate departments..."
         />
         <button
