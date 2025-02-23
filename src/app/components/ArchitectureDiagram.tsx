@@ -8,9 +8,10 @@ interface ArchitectureDiagramProps {
     component: string;
     suggestions: Array<string>;
   }>;
+  executionPlan?: string;
 }
 
-export default function ArchitectureDiagram({ diagram, tools }: ArchitectureDiagramProps) {
+export default function ArchitectureDiagram({ diagram, tools, executionPlan }: ArchitectureDiagramProps) {
   const diagramRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -95,6 +96,22 @@ export default function ArchitectureDiagram({ diagram, tools }: ArchitectureDiag
           </div>
         </div>
       </div>
+
+      {executionPlan && (
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+          <div className="border-b border-gray-200 bg-gray-50 p-4">
+            <h2 className="text-lg font-semibold text-gray-800">Execution Plan</h2>
+            <p className="text-sm text-gray-600">Step-by-step system operation flow</p>
+          </div>
+          <div className="p-6">
+            <div className="prose max-w-none">
+              {executionPlan.split('\n').map((line, index) => (
+                <p key={index} className="text-gray-700">{line}</p>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

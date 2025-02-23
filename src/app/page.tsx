@@ -10,6 +10,7 @@ interface Architecture {
     component: string;
     suggestions: string[];
   }>;
+  executionPlan: string;
 }
 
 export default function Home() {
@@ -75,6 +76,7 @@ export default function Home() {
             <ArchitectureDiagram
               diagram={architecture.diagram}
               tools={architecture.tools}
+              executionPlan={architecture.executionPlan}
             />
           )}
         </div>

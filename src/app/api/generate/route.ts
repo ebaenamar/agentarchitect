@@ -1,218 +1,98 @@
 import { NextResponse } from 'next/server';
+import OpenAI from 'openai';
 
-interface Requirements {
-  needsMemory: boolean;
-  needsAPI: boolean;
-  needsML: boolean;
-  needsNLP: boolean;
-  needsStreaming: boolean;
-  needsSecurity: boolean;
-  needsMonitoring: boolean;
-  needsScaling: boolean;
-  needsDataProcessing: boolean;
-}
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
-interface ToolSuggestion {
-  component: string;
-  suggestions: string[];
-}
+const SYSTEM_PROMPT = `You are an AI System Architect specializing in designing multi-agent systems.
+Your task is to analyze requirements and generate:
+1. A detailed system architecture using Mermaid diagram syntax
+2. Specific tool suggestions for each component
+3. A high-level execution plan
+
+Follow these guidelines:
+- Always include an Orchestrator Agent that coordinates other agents
+- Use advanced prompting techniques (CoT, ToT, GoT) in the planning component
+- Include memory components (short-term and long-term)
+- Add monitoring and observability
+- Consider security and scalability
+- Break down complex tasks into subgoals
+
+Output Format:
+1. Architecture Diagram (in Mermaid syntax)
+2. Component-specific tools and frameworks
+3. Execution plan with agent interactions`;
 
 export async function POST(req: Request) {
   try {
     const { prompt } = await req.json();
-    const architecture = generateSampleArchitecture(prompt);
-    return NextResponse.json(architecture);
-  } catch {
-    return NextResponse.json({ error: 'Failed to generate architecture' }, { status: 500 });
-  }
-}
 
-function generateSampleArchitecture(prompt: string) {
-  const requirements = analyzePrompt(prompt);
-  
-  return {
-    diagram: generateDiagram(requirements),
-    tools: generateToolSuggestions(requirements)
-  };
-}
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [
+        {
+          role: 'system',
+          content: SYSTEM_PROMPT,
+        },
+        {
+          role: 'user',
+          content: `Analyze these requirements and generate a complete multi-agent system architecture: ${prompt}
 
-function analyzePrompt(prompt: string): Requirements {
-  const lowerPrompt = prompt.toLowerCase();
-  return {
-    needsMemory: lowerPrompt.includes('memory') || lowerPrompt.includes('storage'),
-    needsAPI: lowerPrompt.includes('api') || lowerPrompt.includes('endpoint'),
-    needsML: lowerPrompt.includes('ml') || lowerPrompt.includes('machine learning'),
-    needsNLP: lowerPrompt.includes('nlp') || lowerPrompt.includes('language'),
-    needsStreaming: lowerPrompt.includes('stream') || lowerPrompt.includes('real-time'),
-    needsSecurity: lowerPrompt.includes('security') || lowerPrompt.includes('auth'),
-    needsMonitoring: lowerPrompt.includes('monitor') || lowerPrompt.includes('observability'),
-    needsScaling: lowerPrompt.includes('scale') || lowerPrompt.includes('distributed'),
-    needsDataProcessing: lowerPrompt.includes('data') || lowerPrompt.includes('processing'),
-  };
-}
+Please structure your response as follows:
+1. First, output a Mermaid diagram between \`\`\`mermaid tags
+2. Then list "Tools:" followed by component:tool1,tool2,tool3 format
+3. Finally, provide a brief execution plan
 
-function generateDiagram(requirements: Requirements): string {
-  let diagram = `
-graph TB
-    User((User)) --> |Input| API[API Gateway]
-    API --> Agent[Agent Core]
-
-    subgraph "Agent System"
-        Agent --> Orchestrator[Orchestrator]
-        Orchestrator --> ActionExecutor[Action Executor]
-        Orchestrator --> Planning[Planning Engine]
-        Planning --> Reflection[Reflection Module]
-    end
-  `;
-
-  if (requirements.needsSecurity) {
-    diagram += `
-    subgraph "Security Layer"
-        Auth[Authentication]
-        AuthZ[Authorization]
-        Audit[Audit Log]
-        Auth --> AuthZ
-        AuthZ --> Audit
-    end
-    API --> Auth
-    `;
-  }
-
-  if (requirements.needsMemory) {
-    diagram += `
-    subgraph "Memory Subsystem"
-        MemoryManager[Memory Manager]
-        STM[Short-Term Memory]
-        LTM[Long-Term Memory]
-        VectorStore[Vector Store]
-        MemoryManager --> STM
-        MemoryManager --> LTM
-        MemoryManager --> VectorStore
-    end
-    Agent <--> MemoryManager
-    `;
-  }
-
-  if (requirements.needsML) {
-    diagram += `
-    subgraph "ML Pipeline"
-        MLProcessor[ML Processor]
-        ModelRegistry[Model Registry]
-        Training[Training Pipeline]
-        MLProcessor --> ModelRegistry
-        ModelRegistry --> Training
-    end
-    Agent <--> MLProcessor
-    `;
-  }
-
-  if (requirements.needsDataProcessing) {
-    diagram += `
-    subgraph "Data Processing"
-        DataIngestion[Data Ingestion]
-        ETL[ETL Pipeline]
-        DataStore[Data Lake]
-        DataIngestion --> ETL
-        ETL --> DataStore
-    end
-    Agent <--> DataIngestion
-    `;
-  }
-
-  if (requirements.needsMonitoring) {
-    diagram += `
-    subgraph "Observability"
-        Metrics[Metrics Collector]
-        Traces[Distributed Tracing]
-        Logs[Log Aggregator]
-        Dashboard[Monitoring Dashboard]
-        Metrics --> Dashboard
-        Traces --> Dashboard
-        Logs --> Dashboard
-    end
-    Agent -.-> Metrics
-    `;
-  }
-
-  diagram += `
-    ActionExecutor --> |Output| User
-  `;
-
-  return diagram;
-}
-
-function generateToolSuggestions(requirements: Requirements): ToolSuggestion[] {
-  const tools: ToolSuggestion[] = [
-    {
-      component: 'Agent Core',
-      suggestions: [
-        'LangChain for agent orchestration',
-        'OpenAI GPT-4 for decision making',
-        'FastAPI for API endpoints',
-        'Celery for task queue management'
-      ]
-    }
-  ];
-
-  if (requirements.needsSecurity) {
-    tools.push({
-      component: 'Security Layer',
-      suggestions: [
-        'Auth0 for authentication',
-        'OPA (Open Policy Agent) for authorization',
-        'AWS CloudTrail for audit logging',
-        'Vault for secrets management'
-      ]
+The Mermaid diagram should show:
+- Orchestrator Agent with planning capabilities
+- Memory systems (short-term, long-term)
+- Tool integration
+- Agent communication paths
+- Monitoring and security components`,
+        },
+      ],
+      temperature: 0.7,
+      max_tokens: 2000,
     });
-  }
 
-  if (requirements.needsMemory) {
-    tools.push({
-      component: 'Memory Subsystem',
-      suggestions: [
-        'Redis for short-term memory',
-        'PostgreSQL for long-term storage',
-        'Pinecone for vector embeddings',
-        'Milvus for vector similarity search'
-      ]
+    const response = completion.choices[0].message.content;
+    if (!response) throw new Error('No response from OpenAI');
+
+    // Extract the Mermaid diagram
+    const diagramMatch = response.match(/\`\`\`mermaid([\s\S]*?)\`\`\`/);
+    const diagram = diagramMatch ? diagramMatch[1].trim() : '';
+
+    // Extract tools section
+    const toolsMatch = response.match(/Tools:([\s\S]*?)(?=Execution Plan:|$)/s);
+    const toolsText = toolsMatch ? toolsMatch[1].trim() : '';
+
+    // Parse tools into structured format
+    const tools = toolsText
+      .split('\n')
+      .filter(line => line.trim())
+      .map(line => {
+        const [component, ...suggestions] = line.split(':').map(s => s.trim());
+        return {
+          component,
+          suggestions: suggestions.join(':').split(',').map(s => s.trim()),
+        };
+      });
+
+    // Extract execution plan
+    const planMatch = response.match(/Execution Plan:([\s\S]*?)$/s);
+    const executionPlan = planMatch ? planMatch[1].trim() : '';
+
+    return NextResponse.json({ 
+      diagram, 
+      tools,
+      executionPlan 
     });
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json(
+      { error: 'Failed to generate architecture' },
+      { status: 500 }
+    );
   }
-
-  if (requirements.needsML) {
-    tools.push({
-      component: 'ML Pipeline',
-      suggestions: [
-        'PyTorch or TensorFlow for ML models',
-        'MLflow for model registry',
-        'Kubeflow for ML pipelines',
-        'Ray for distributed training'
-      ]
-    });
-  }
-
-  if (requirements.needsDataProcessing) {
-    tools.push({
-      component: 'Data Processing',
-      suggestions: [
-        'Apache Kafka for data streaming',
-        'Apache Spark for ETL',
-        'Delta Lake for data lake',
-        'dbt for data transformation'
-      ]
-    });
-  }
-
-  if (requirements.needsMonitoring) {
-    tools.push({
-      component: 'Observability',
-      suggestions: [
-        'Prometheus for metrics',
-        'Jaeger for distributed tracing',
-        'ELK Stack for log aggregation',
-        'Grafana for dashboards'
-      ]
-    });
-  }
-
-  return tools;
 }
