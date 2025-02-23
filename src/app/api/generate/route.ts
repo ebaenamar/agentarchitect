@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
-// Configure longer timeout for the API route
-export const maxDuration = 300; // 5 minutes
+// Configure timeout for the API route (Vercel hobby plan limit)
+export const maxDuration = 60; // 60 seconds maximum for hobby plan
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 
@@ -10,31 +10,26 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const SYSTEM_PROMPT = `You are an AI System Architect specializing in designing multi-agent systems.
-Your task is to analyze requirements and generate:
-1. A detailed system architecture using Mermaid diagram syntax
-2. Specific tool suggestions for each component
-3. A high-level execution plan
-
-Follow these guidelines:
-- Always include an Orchestrator Agent that coordinates other agents
-- Use advanced prompting techniques (CoT, ToT, GoT) in the planning component
-- Include memory components (short-term and long-term)
-- Add monitoring and observability
-- Consider security and scalability
-- Break down complex tasks into subgoals
+const SYSTEM_PROMPT = `You are an AI System Architect. Create concise, efficient multi-agent systems.
 
 Output Format:
-1. Architecture Diagram (in Mermaid syntax)
-2. Component-specific tools and frameworks
-3. Execution plan with agent interactions`;
+1. Mermaid diagram
+2. Tools per component
+3. Brief execution plan
+
+Requirements:
+- Orchestrator Agent
+- Memory (short/long-term)
+- Monitoring
+- Security
+- Tool integration`;
 
 export async function POST(req: Request) {
   try {
     const { prompt } = await req.json();
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4',
+      model: 'gpt-4-turbo-preview',
       messages: [
         {
           role: 'system',
@@ -58,7 +53,8 @@ The Mermaid diagram should show:
         },
       ],
       temperature: 0.7,
-      max_tokens: 2000,
+      max_tokens: 1500,
+      response_format: { type: 'text' },
     });
 
     const response = completion.choices[0].message.content;

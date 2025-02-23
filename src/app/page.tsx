@@ -24,7 +24,7 @@ export default function Home() {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 290000); // 4m50s timeout
+      const timeoutId = setTimeout(() => controller.abort(), 55000); // 55s timeout (slightly less than server timeout)
 
       const response = await fetch('/api/generate', {
         method: 'POST',
