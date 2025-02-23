@@ -1,44 +1,49 @@
 import { NextResponse } from 'next/server';
 
+interface Requirements {
+  needsMemory: boolean;
+  needsAPI: boolean;
+  needsML: boolean;
+  needsNLP: boolean;
+  needsStreaming: boolean;
+}
+
+interface ToolSuggestion {
+  component: string;
+  suggestions: string[];
+}
+
 export async function POST(req: Request) {
   try {
     const { prompt } = await req.json();
-
-    // This is where you would integrate with your AI service
-    // For now, we'll return a sample response
     const architecture = generateSampleArchitecture(prompt);
-
     return NextResponse.json(architecture);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to generate architecture' }, { status: 500 });
   }
 }
 
 function generateSampleArchitecture(prompt: string) {
-  // Analyze the prompt to determine system requirements
   const requirements = analyzePrompt(prompt);
   
-  // Generate appropriate diagram and tool suggestions
   return {
     diagram: generateDiagram(requirements),
     tools: generateToolSuggestions(requirements)
   };
 }
 
-function analyzePrompt(prompt: string) {
-  // Simple keyword-based analysis
-  const requirements = {
-    needsMemory: prompt.toLowerCase().includes('memory') || prompt.toLowerCase().includes('storage'),
-    needsAPI: prompt.toLowerCase().includes('api') || prompt.toLowerCase().includes('endpoint'),
-    needsML: prompt.toLowerCase().includes('ml') || prompt.toLowerCase().includes('machine learning'),
-    needsNLP: prompt.toLowerCase().includes('nlp') || prompt.toLowerCase().includes('language'),
-    needsStreaming: prompt.toLowerCase().includes('stream') || prompt.toLowerCase().includes('real-time'),
+function analyzePrompt(prompt: string): Requirements {
+  const lowerPrompt = prompt.toLowerCase();
+  return {
+    needsMemory: lowerPrompt.includes('memory') || lowerPrompt.includes('storage'),
+    needsAPI: lowerPrompt.includes('api') || lowerPrompt.includes('endpoint'),
+    needsML: lowerPrompt.includes('ml') || lowerPrompt.includes('machine learning'),
+    needsNLP: lowerPrompt.includes('nlp') || lowerPrompt.includes('language'),
+    needsStreaming: lowerPrompt.includes('stream') || lowerPrompt.includes('real-time'),
   };
-  
-  return requirements;
 }
 
-function generateDiagram(requirements: any) {
+function generateDiagram(requirements: Requirements): string {
   let diagram = `
 graph TB
     User((User)) --> |Input| Agent
@@ -81,8 +86,8 @@ graph TB
   return diagram;
 }
 
-function generateToolSuggestions(requirements: any) {
-  const tools = [
+function generateToolSuggestions(requirements: Requirements): ToolSuggestion[] {
+  const tools: ToolSuggestion[] = [
     {
       component: 'Agent Core',
       suggestions: [
